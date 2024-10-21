@@ -1,87 +1,140 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
-class Program
+namespace UniqueWordCounterApp
 {
-    static void Main(string[] args)
+    class MainClass
     {
-        Console.WriteLine("Впишите путь до созданного файла");
-        string firstFilePath = Convert.ToString(Console.ReadLine()); // Путь до созданного файла
-
-        if (File.Exists(firstFilePath))
+        static void Main(string[] args)
         {
-            Console.WriteLine("Файл найден");
-        }
-        else
-        {
-            Console.WriteLine("Файл не найден\nПерезапустите программу и вставьте верный путь до файла");
- 
-            return;
-        }
+            Console.WriteLine("Введите путь до созданного файла и для создания файла.");
 
-        Console.WriteLine("Впишите путь до создаваемого файла");
-        string secondFilePath = Convert.ToString(Console.ReadLine()); // Путь до создаваеммого файла
+            string inputFilePath = Convert.ToString(Console.ReadLine());  // Путь к первому файлу (существующему)
 
-        // Читает первый файл
-        var wordCounts = ReadWordsAndCount(firstFilePath);
-
-        // Пишет количество слов во второй файл
-        WriteResultsToFile(secondFilePath, wordCounts);
-    }
-
-    // Функция для чтения слов из файла и подсчета их повтора
-    static Dictionary<string, int> ReadWordsAndCount(string filePath)
-    {
-        var wordCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        // Читает все строки в файле
-        var lines = File.ReadAllLines(filePath);
-
-        foreach (var line in lines)
-        {
-            // Разабивает каждую строку на слова (при условии, что слова разделены пробелами или знаками препинания).
-            var words = line.Split(new[] { ' ', ',', '.', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var word in words)
+            if (!File.Exists(inputFilePath))
             {
-                // Считает количество слов
-                if (wordCounts.ContainsKey(word))
-                {
-                    wordCounts[word]++;
-                }
-                else
-                {
-                    wordCounts[word] = 1;
-                }
-            }
-        }
-
-        return wordCounts;
-    }
-
-    // Функция для записи количества слов и уникальных слов в создаваеммый файл
-    static void WriteResultsToFile(string filePath, Dictionary<string, int> wordCounts)
-    {
-        using (var writer = new StreamWriter(filePath))
-        {
-            // Подсчитывает уникальные слова
-            var uniqueWords = wordCounts.Where(kvp => kvp.Value == 1).ToList();
-            writer.WriteLine($"Количество уникальных слов: {uniqueWords.Count}");
-
-            // Пишет список уникальных слов
-            writer.WriteLine("Уникальные слова:");
-            foreach (var kvp in uniqueWords)
-            {
-                writer.WriteLine(kvp.Key);
+                Console.WriteLine("Файл не найден\nRestart");
+                return;
             }
 
-            // Записывает количество каждого слова, которое встречается более одного раза
-            writer.WriteLine("\nСколько раз встретилось слово/символ:");
-            foreach (var kvp in wordCounts.Where(kvp => kvp.Value > 1))
+            string outputFilePath = Convert.ToString(Console.ReadLine()); // Путь ко второму файлу (будет создан)
+
+            // Вызов классов для выполнения задач
+            FileReader reader = new FileReader(inputFilePath);
+            var words = reader.ReadWords();
+
+            WordProcessor processor = new WordProcessor(words);
+            var uniqueWords = processor.GetUniqueWords();
+            var repeatedWords = processor.GetRepeatedWords();
+            int totalWords = processor.GetTotalWordCount();
+
+            FileWriter writer = new FileWriter(outputFilePath);
+            writer.WriteResults(uniqueWords, repeatedWords, totalWords);
+        }
+    }
+
+    // Класс для чтения файла
+    class FileReader
+    {
+        private string _filePath;
+
+        public FileReader(string filePath)
+        {
+            _filePath = filePath;
+        }
+
+        // Метод для чтения всех слов из файла
+        public List<string> ReadWords()
+        {
+            try
             {
-                writer.WriteLine($"{kvp.Key} = {kvp.Value}");
+                string text = File.ReadAllText(_filePath);
+                // Разделение текста на слова с использованием разделителей
+                var words = text.Split(new char[] { ' ', '.', ',', '!', '?', ';', ':', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                return words.Select(word => word.ToLower()).ToList(); // Приведение к нижнему регистру
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка чтения файла: {ex.Message}");
+                return new List<string>();
+            }
+        }
+    }
+
+    // Класс для обработки текста (подсчет уникальных и повторяющихся слов)
+    class WordProcessor
+    {
+        private List<string> _words;
+
+        public WordProcessor(List<string> words)
+        {
+            _words = words;
+        }
+
+        // Получение списка уникальных слов (которые встречаются один раз)
+        public List<string> GetUniqueWords()
+        {
+            var wordCount = _words.GroupBy(w => w)
+                                  .Where(g => g.Count() == 1)
+                                  .Select(g => g.Key)
+                                  .ToList();
+            return wordCount;
+        }
+
+        // Получение списка повторяющихся слов и их количества
+        public Dictionary<string, int> GetRepeatedWords()
+        {
+            var repeatedWords = _words.GroupBy(w => w)
+                                      .Where(g => g.Count() > 1)
+                                      .ToDictionary(g => g.Key, g => g.Count());
+            return repeatedWords;
+        }
+
+        // Получение общего количества слов
+        public int GetTotalWordCount()
+        {
+            return _words.Count;
+        }
+    }
+
+    // Класс для записи результатов в файл
+    class FileWriter
+    {
+        private string _filePath;
+
+        public FileWriter(string filePath)
+        {
+            _filePath = filePath;
+        }
+
+        // Запись результатов в файл
+        public void WriteResults(List<string> uniqueWords, Dictionary<string, int> repeatedWords, int totalWordCount)
+        {
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(_filePath))
+                {
+                    writer.WriteLine($"Количество всех слов - {totalWordCount}");
+                    writer.WriteLine($"Уникальных слов - {uniqueWords.Count}");
+                    writer.WriteLine("Уникальные слова:");
+                    foreach (var word in uniqueWords)
+                    {
+                        writer.WriteLine(word);
+                    }
+
+                    writer.WriteLine("\nПовторяющиеся слова:");
+                    foreach (var word in repeatedWords)
+                    {
+                        writer.WriteLine($"{word.Key} - {word.Value} ");
+                    }
+                }
+                Console.WriteLine("Успешная запись файла.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка записи файла: {ex.Message}");
             }
         }
     }
