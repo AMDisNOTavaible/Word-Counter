@@ -1,0 +1,19 @@
+
+using System;
+using System.IO;
+namespace UniqueWordCounterApp.Services
+{
+    public class FilePath
+    {
+        public void ProcessFiles(string inputPath, string outputPath)
+        {
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine("Файл не найден\nRestart");
+                return;
+            }
+            FileReader reader = new FileReader();
+            reader.ReadAndProcess(inputPath, outputPath);
+        }
+    }
+}
