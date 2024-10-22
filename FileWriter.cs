@@ -1,13 +1,26 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace UniqueWordCounterApp.Services
+namespace WordCounterApp.Services
 {
     public class FileWriter
     {
+        // Список запрещенных символов
+        private readonly char[] invalidChars = { '#', '<', '>', '$', '+', '%', '!', '`', '/', '?', '&',
+                                               '*', '\'', '"', '|', '{', '}', ':', ';', '\\', ',', '.', '@' };
+
         public void ProcessAndWrite(string outputPath, List<string> words)
         {
+            // Проверяем имя файла на наличие запрещенных символов
+            if (ContainsInvalidCharacters(outputPath))
+            {
+                Console.WriteLine("Ошибка: Имя файла содержит запрещенные символы");
+                Console.WriteLine($"Запрещенные символы: {string.Join(" ", invalidChars)}");
+                return;
+            }
+
             FileProcessor processor = new FileProcessor();
             var results = processor.ProcessWords(words);
 
@@ -35,6 +48,16 @@ namespace UniqueWordCounterApp.Services
             {
                 Console.WriteLine($"Ошибка записи файла: {ex.Message}");
             }
+        }
+
+        // Метод для проверки наличия запрещенных символов в пути файла
+        private bool ContainsInvalidCharacters(string path)
+        {
+            // Получаем только имя файла из полного пути
+            string fileName = Path.GetFileName(path);
+
+            // Проверяем наличие запрещенных символов
+            return fileName.Any(c => invalidChars.Contains(c));
         }
     }
 }
