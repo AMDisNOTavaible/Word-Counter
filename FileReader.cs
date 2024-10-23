@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace UniqueWordCounterApp.Services
+namespace WordCounterApp.Services
 {
     public class FileReader
     {
