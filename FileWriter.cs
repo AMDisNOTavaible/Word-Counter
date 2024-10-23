@@ -9,7 +9,7 @@ namespace WordCounterApp.Services
     {
         // Список запрещенных символов
         private readonly char[] invalidChars = { '#', '<', '>', '$', '+', '%', '!', '`', '/', '?', '&',
-                                               '*', '\'', '"', '|', '{', '}', ':', ';', '\\', ',', '.', '@' };
+                                               '*', '\'', '"', '|', '{', '}', ':', ';', '\\', ',', '@' };
 
         public void ProcessAndWrite(string outputPath, List<string> words)
         {
